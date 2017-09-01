@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import './clock.css';
 
 // pass api call data as props later
 const Quote = (props) => {
@@ -12,9 +11,7 @@ const Button = (props) => {
     const btnStyle = {
       width: 150,
       height: 40,
-      fontSize: 14,
-      backgroundColor: "#008CBA",
-      color: "white",
+      fontSize: 16,
       borderRadius: 6
     }
     return (
@@ -50,7 +47,8 @@ const ChangeTimeToggle = (props) => {
   const style = {
     fontSize: 36,
     fontWeight: "bold",
-    display: "inline-block"
+    display: "inline-block",
+    margin: "0px 10px"
   };
   return (
     <button style={style} onClick={() => props.click()}>
@@ -94,9 +92,9 @@ Helper functions
 
 // returns an obj w/ minute & second keys with 'number' values
 currentTimeObj = (stateTime) => {
-      const matchArr = stateTime.match(/^(\d+):(\d+)$/)
-      const lengthInMinutes = parseInt(matchArr[1]);
-      const lengthInSeconds = parseInt(matchArr[2]);
+      const matchArr = stateTime.match(/^(\d+):(\d+)$/),
+            lengthInMinutes = parseInt(matchArr[1], 10),
+            lengthInSeconds = parseInt(matchArr[2], 10);
 
       return {
         minute: lengthInMinutes,
