@@ -78,6 +78,7 @@ class Clock extends Component {
     super(props);
     this.state = {
       remainingTime: "25:00",
+      interval: 0,
       clockRunning: false
     }
   }
@@ -86,68 +87,69 @@ class Clock extends Component {
 Helper functions
 */
 
-  // takes date & time to add to given date as arguments
-  getStoppingTime = (date, minutes) => {
-    return new Date(date.getTime() + minutes*60000);
+  // takes date & time to add to given date (minutes and seconds) as arguments
+  getStoppingTime = (date, minutes, seconds) => {
+    return new Date(date.getTime() + (minutes*60*1000) + (seconds * 1000));
 }
 
 // returns an obj w/ minute & second keys with 'number' values
 currentTimeObj = (stateTime) => {
-  // handles cases where state is a message str & not a time str
-  if (stateTime.length !== 5) {
-    this.setState({ remainingTime: "25:00"});
-  }
+      const matchArr = stateTime.match(/^(\d+):(\d+)$/)
+      const lengthInMinutes = parseInt(matchArr[1]);
+      const lengthInSeconds = parseInt(matchArr[2]);
 
-  // capture minutes & seconds from current state string
-  const matchArr = stateTime.match(/^(\d+):(\d+)$/)
-  const lengthInMinutes = parseInt(matchArr[1]);
-  const lengthInSeconds = parseInt(matchArr[2]);
-
-  return {
-    minute: lengthInMinutes,
-    second: lengthInSeconds
-  }
+      return {
+        minute: lengthInMinutes,
+        second: lengthInSeconds
+      }
 }
 
 // returns Boolean if time is up
 isTimeLeft = (stateTime) => {
   const timeObj = this.currentTimeObj(stateTime);
   return (timeObj.minute > 0 || timeObj.second > 0) ?
-     true :
-     false;
-   }
+  true :
+  false;
+}
+
+// takes a number for minutes & seconds & returns formatted time string
+formatTime = (minute, second) => {
+  let minutes = minute < 10 ? "0" + minute : minute,
+      seconds = second < 10 ? "0" + second : second
+  return minutes + ":" + seconds;
+}
 
   //updates state w/ remaining time
-  setRemainingTime = (stoppingTime, interval) => {
+  setRemainingTime = (stoppingTime) => {
     // stops clock if time is up
     if (this.isTimeLeft(this.state.remainingTime) === false) {
-      clearInterval(interval);
+      clearInterval(this.state.interval);
       this.setState({
         remainingTime: "Time's up!",
+        interval: 0,
         clockRunning: false
       });
-      return;
     }
-
+    else {
       let now = new Date().getTime(),
           diff = stoppingTime - now,
             // calculate remaining min/sec from milliseconds
-          minutesLeft = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60)),
-          secondsLeft = Math.floor((diff % (1000 *60)) / 1000),
-            // format time
-          minutes = minutesLeft < 10 ? "0" + minutesLeft : minutesLeft,
-          seconds = secondsLeft < 10 ? "0" + secondsLeft : secondsLeft,
+          minute = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60)),
+          second = Math.floor((diff % (1000 *60)) / 1000),
+          remaining = this.formatTime(minute, second);
 
-          remaining = minutes + ":" + seconds;
       this.setState({
         remainingTime: remaining
       });
+    }
 }
+
 
 // starts clock
 tick = (stopTime, setRemainingTimeCallback) => {
   let interval = setInterval(function(){
-    setRemainingTimeCallback(stopTime, interval);}, 990);
+    setRemainingTimeCallback(stopTime);}, 990);
+    this.setState({ interval: interval })
 }
 
 
@@ -161,9 +163,9 @@ startClock = () => {
     return;
 
   if (this.isTimeLeft(this.state.remainingTime)) {
-    const matchArr = this.state.remainingTime.match(/^(\d+):(\d+)$/)
-    const lengthInMinutes = parseInt(matchArr[1]);
-    const stopAt = this.getStoppingTime(new Date(), lengthInMinutes);
+    const timeObj = this.currentTimeObj(this.state.remainingTime),
+          stopAt = this.getStoppingTime(new Date(), timeObj.minute, timeObj.second);
+
     this.tick(stopAt, this.setRemainingTime);
     this.setState({ clockRunning: true });
   }
@@ -174,15 +176,21 @@ startClock = () => {
 
 
 pauseClock = () => {
-this.setState({
-  remainingTime: "paused"
-});
+  clearInterval(this.state.interval);
+  this.setState({
+    clockRunning: false,
+    interval: 0
+  });
+
 }
 
 resetClock = () => {
-this.setState({
-  remainingTime: "reset"
-});
+  clearInterval(this.state.interval);
+  this.setState({
+    remainingTime: "25:00",
+    clockRunning: false,
+    interval: 0
+  });
 }
 
 /*
@@ -190,24 +198,44 @@ add or subtract minute methods
 */
 
 addMinute = () => {
-  const timeObj = this.currentTimeObj(this.state.remainingTime);
-  const newTimeStr = String(timeObj.minute + 1) + ':' + String(timeObj.second);
-  this.setState({ remainingTime: newTimeStr });
+  if (this.state.clockRunning === false) {
+    const timeObj = this.currentTimeObj(this.state.remainingTime),
+          newTimeStr = this.formatTime(timeObj.minute + 1, timeObj.second);
+    this.setState({ remainingTime: newTimeStr });
+  }
 }
 
 subtractMinute = () => {
-  alert("connected");
+  if (this.state.clockRunning === false) {
+    const timeObj = this.currentTimeObj(this.state.remainingTime);
+    if (timeObj.minute > 0) {
+      const newTimeStr = this.formatTime(timeObj.minute - 1, timeObj.second);
+      this.setState({ remainingTime: newTimeStr });
+    }
+  }
 }
 
 
-/* Top button bar buttons, only insert new time */
+/*
+Top button bar buttons, only insert new time
+*/
+ // clearInterval before setting state
+resetIfRunning = () => {
+  if (this.state.clockRunning) {
+    clearInterval(this.state.interval);
+    this.setState({ clockRunning: false, interval: 0 })
+  }
+}
   pomodoroClock = () => {
+    this.resetIfRunning();
     this.setState({ remainingTime: "25:00" });
   }
   shortBreakClock = () => {
-    this.setState({ remainingTime: "5:00" });
+    this.resetIfRunning();
+    this.setState({ remainingTime: "05:00" });
   }
   longBreakClock = () => {
+    this.resetIfRunning();
     this.setState({ remainingTime: "10:00" });
   }
 
