@@ -1,6 +1,6 @@
 # Pomodoro Clock
-- adjustable timer & sound notifications
-- Ready to export as a React Component.
+- adjustable timer
+- available as `<Clock />` in `src/components/clock.js`
 
 <br>
 This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app).
